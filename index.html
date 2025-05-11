@@ -5,30 +5,51 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>hi</title>
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    body {
-      font-family: sans-serif;
+    body { font-family: sans-serif; }
+    canvas { pointer-events: none; }
+
+    .blur-overlay {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
-    canvas {
-      pointer-events: none;
+    .audio-controls button {
+      padding: 6px;
+      border-radius: 6px;
+      background-color: rgba(255,255,255,0.05);
+      transition: background 0.2s;
+    }
+
+    .audio-controls button:hover {
+      background-color: rgba(255,255,255,0.1);
+    }
+
+    .time-display {
+      font-size: 0.875rem;
+      color: #9ca3af;
     }
   </style>
 </head>
-<body class="min-h-screen bg-black text-white flex flex-col items-center justify-center px-4 py-10 relative overflow-hidden">
 
-  <!-- Falling Dots Canvas -->
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen px-4 py-10 relative overflow-hidden">
+
+  <!-- Falling Dots Background -->
   <canvas id="backgroundCanvas" class="fixed top-0 left-0 w-full h-full z-0"></canvas>
 
-  <div class="z-10 w-full max-w-xs text-center space-y-6">
-    <h1 class="text-4xl font-extrabold">hi</h1>
-    <p class="text-sm text-zinc-400">Socials</p>
+  <!-- Click-to-enter overlay -->
+  <div id="enterOverlay" class="absolute inset-0 z-50 bg-black bg-opacity-70 blur-overlay flex items-center justify-center cursor-pointer">
+    <p class="text-white text-2xl font-semibold">click 2 enter!!</p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="z-10 w-full max-w-xs text-center space-y-6 hidden" id="mainContent">
+    <h1 class="text-4xl font-extrabold">wsg</h1>
+    <p class="text-sm text-zinc-400">follow me for free synapse x crack no virus 100% no clickbait</p>
 
     <div class="space-y-4">
       <a
@@ -54,6 +75,23 @@
         </div>
         <span class="text-white">@SeprexOG</span>
       </a>
+    </div>
+
+    <!-- Audio Player -->
+    <div class="mt-8 p-4 rounded-xl bg-zinc-900 border border-zinc-700">
+      <p class="text-sm text-zinc-400 mb-2">Now Playing: <em>astrid</em></p>
+      <audio id="audioPlayer" class="hidden" loop>
+        <source src="https://github.com/turtleatedog/turtleatedog.github.io/raw/refs/heads/main/astrid.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+      </audio>
+      <div class="audio-controls flex justify-center gap-4 mt-2">
+        <button id="prevBtn"><i data-lucide="skip-back" class="w-5 h-5"></i></button>
+        <button id="playPauseBtn">
+          <div class="w-5 h-[2px] bg-white"></div>
+        </button>
+        <button id="nextBtn"><i data-lucide="skip-forward" class="w-5 h-5"></i></button>
+      </div>
+      <div id="timer" class="time-display mt-2">0:00 / 0:00</div>
     </div>
   </div>
 
@@ -96,8 +134,74 @@
     drawDots();
   </script>
 
+  <!-- Audio and Overlay Script -->
   <script>
     lucide.createIcons();
+
+    const overlay = document.getElementById('enterOverlay');
+    const content = document.getElementById('mainContent');
+    const audio = document.getElementById('audioPlayer');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const timerDisplay = document.getElementById('timer');
+
+    const tracks = [audio.querySelector('source').src];
+    let currentTrack = 0;
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateTimer() {
+      const current = formatTime(audio.currentTime);
+      const total = isNaN(audio.duration) ? '0:00' : formatTime(audio.duration);
+      timerDisplay.textContent = `${current} / ${total}`;
+    }
+
+    function loadTrack(index) {
+      audio.src = tracks[index];
+      audio.load();
+      updateTimer();
+    }
+
+    function tryPlayAudio() {
+      audio.play().then(() => {
+        overlay.style.display = 'none';
+        content.classList.remove('hidden');
+      }).catch(() => {
+        alert('Click again to enable audio.');
+      });
+    }
+
+    overlay.addEventListener('click', tryPlayAudio);
+
+    playPauseBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        tryPlayAudio();
+      } else {
+        audio.pause();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      currentTrack = (currentTrack + 1) % tracks.length;
+      loadTrack(currentTrack);
+      tryPlayAudio();
+    });
+
+    prevBtn.addEventListener('click', () => {
+      currentTrack = (currentTrack - 1 + tracks.length) % tracks.length;
+      loadTrack(currentTrack);
+      tryPlayAudio();
+    });
+
+    audio.addEventListener('loadedmetadata', updateTimer);
+    audio.addEventListener('timeupdate', updateTimer);
+
+    updateTimer();
   </script>
 
 </body>
